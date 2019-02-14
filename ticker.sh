@@ -17,7 +17,7 @@ if [ -z "$SYMBOLS" ]; then
 fi
 
 FIELDS=(symbol marketState regularMarketPrice regularMarketChange regularMarketChangePercent \
-  preMarketPrice preMarketChange preMarketChangePercent postMarketPrice postMarketChange postMarketChangePercent)
+  preMarketPrice preMarketChange preMarketChangePercent postMarketPrice postMarketChange postMarketChangePercent dividendDate)
 API_ENDPOINT="https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com"
 
 : "${COLOR_BOLD:=\e[1;37m}"
@@ -39,6 +39,13 @@ for symbol in $(IFS=' '; echo "${SYMBOLS[*]}"); do
   if [ -z "$(query $symbol 'marketState')" ]; then
     printf 'No results for symbol "%s"\n' $symbol
     continue
+  fi
+
+  epochdivdate=$(query $symbol 'dividendDate')
+  if [ "$epochdivdate" != "null" ]; then
+    divdate=$(date +%Y%b%d -d @$epochdivdate | tr -s '[:lower:]' '[:upper:]')
+  else
+    divdate="NA"
   fi
 
   if [ $(query $symbol 'marketState') == "PRE" ] \
@@ -72,5 +79,6 @@ for symbol in $(IFS=' '; echo "${SYMBOLS[*]}"); do
 
   printf "%-10s$COLOR_BOLD%8.2f$COLOR_RESET" $symbol $price
   printf "$color%10.2f%12s$COLOR_RESET" $diff $(printf "(%.2f%%)" $percent)
-  printf " %s\n" "$nonRegularMarketSign"
+  printf " %s" "$nonRegularMarketSign"
+  printf "\t%s\n" $divdate
 done
