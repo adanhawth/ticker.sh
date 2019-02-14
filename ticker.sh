@@ -53,21 +53,19 @@ for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
     && [ "$(query $symbol 'preMarketChange')" != "null" ]; then
     nonRegularMarketSign='*'
     price=$(query $symbol 'preMarketPrice')
-    diff=$(query $symbol 'preMarketChange')
-    percent=$(query $symbol 'preMarketChangePercent')
   elif [ $(query $symbol 'marketState') != "REGULAR" ] \
     && [ "$(query $symbol 'postMarketChange')" != "0" ] \
     && [ "$(query $symbol 'postMarketChange')" != "null" ]; then
     nonRegularMarketSign='*'
     price=$(query $symbol 'postMarketPrice')
-    diff=$(query $symbol 'postMarketChange')
-    percent=$(query $symbol 'postMarketChangePercent')
   else
     nonRegularMarketSign=''
     price=$(query $symbol 'regularMarketPrice')
-    diff=$(query $symbol 'regularMarketChange')
-    percent=$(query $symbol 'regularMarketChangePercent')
   fi
+
+  prevcloseprice=$(query $symbol 'regularMarketPreviousClose')
+  diff=$(bc <<< "$price-$prevcloseprice")
+  percent=$(bc -l <<< "($diff/$prevcloseprice)*100")
 
   if [ "$diff" == "0" ]; then
     color=
