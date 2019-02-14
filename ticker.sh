@@ -35,7 +35,7 @@ query () {
   echo $results | jq -r ".[] | select (.symbol == \"$1\") | .$2"
 }
 
-for symbol in $(IFS=' '; echo "${SYMBOLS[*]}"); do
+for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
   if [ -z "$(query $symbol 'marketState')" ]; then
     printf 'No results for symbol "%s"\n' $symbol
     continue
