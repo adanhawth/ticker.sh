@@ -41,11 +41,13 @@ for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
     continue
   fi
 
+  fmtdivdate="\t%s"
   epochdivdate=$(query $symbol 'dividendDate')
   if [ "$epochdivdate" != "null" ]; then
     divdate=$(date +%Y%b%d -d @$epochdivdate | tr -s '[:lower:]' '[:upper:]')
   else
     divdate="NA"
+    fmtdivdate="$fmtdivdate\t"
   fi
 
   if [ $(query $symbol 'marketState') == "PRE" ] \
@@ -78,5 +80,6 @@ for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
   printf "%-10s$COLOR_BOLD%8.2f$COLOR_RESET" $symbol $price
   printf "$color%10.2f%12s$COLOR_RESET" $diff $(printf "(%.2f%%)" $percent)
   printf " %s" "$nonRegularMarketSign"
-  printf "\t%s\n" $divdate
+  printf $fmtdivdate $divdate
+  printf "\n"
 done
