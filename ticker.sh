@@ -16,14 +16,17 @@ if [ -z "$SYMBOLS" ]; then
   exit
 fi
 
-FIELDS=(symbol marketState regularMarketPrice regularMarketChange regularMarketChangePercent \
-  preMarketPrice preMarketChange preMarketChangePercent postMarketPrice postMarketChange postMarketChangePercent dividendDate)
-API_ENDPOINT="https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com"
-
+: "${COLOR_BLUE:=\e[0;34m}"
 : "${COLOR_BOLD:=\e[1;37m}"
 : "${COLOR_GREEN:=\e[32m}"
 : "${COLOR_RED:=\e[31m}"
 : "${COLOR_RESET:=\e[00m}"
+
+HEADER="$COLOR_BLUE\t\t\t\t\t\t%s\t%s$COLOR_RESET\n"
+FIELDS=(symbol marketState regularMarketPrice regularMarketChange regularMarketChangePercent \
+  preMarketPrice preMarketChange preMarketChangePercent postMarketPrice
+  postMarketChange postMarketChangePercent dividendDate earningsTimestamp)
+API_ENDPOINT="https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com"
 
 symbols=$(IFS=,; echo "${SYMBOLS[*]}")
 fields=$(IFS=,; echo "${FIELDS[*]}")
@@ -35,6 +38,7 @@ query () {
   echo $results | jq -r ".[] | select (.symbol == \"$1\") | .$2"
 }
 
+printf $HEADER "DIV_DATE" "EARN_DATE"
 for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
   if [ -z "$(query $symbol 'marketState')" ]; then
     printf 'No results for symbol "%s"\n' $symbol
@@ -48,6 +52,15 @@ for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
   else
     divdate="NA"
     fmtdivdate="$fmtdivdate\t"
+  fi
+
+  fmtearningsdate="\t%s"
+  epochearningsdate=$(query $symbol 'earningsTimestamp')
+  if [ "$epochearningsdate" != "null" ]; then
+    earningsdate=$(date +%Y%b%d -d @$epochearningsdate | tr -s '[:lower:]' '[:upper:]')
+  else
+    earningsdate="NA"
+    fmtearningsdate="$fmtearningsdate\t"
   fi
 
   if [ $(query $symbol 'marketState') == "PRE" ] \
@@ -81,5 +94,6 @@ for symbol in $(echo ${SYMBOLS[*]} | tr " " "\n" | sort -g); do
   printf "$color%10.2f%12s$COLOR_RESET" $diff $(printf "(%.2f%%)" $percent)
   printf " %s" "$nonRegularMarketSign"
   printf $fmtdivdate $divdate
+  printf $fmtearningsdate $earningsdate
   printf "\n"
 done
